@@ -1,0 +1,153 @@
+{
+  "config": {
+    "alphabet": [
+      "S",
+      "R",
+      "G",
+      "m",
+      "P",
+      "D",
+      "N"
+    ],
+    "alpha": 0.5,
+    "master_seed": 20260731,
+    "n_mask_repeats": 20,
+    "orders": [
+      1,
+      2,
+      3
+    ],
+    "missing_rates": [
+      0.1,
+      0.3,
+      0.5
+    ],
+    "train_sequences": [
+      "yaman13.wav",
+      "yaman4.wav",
+      "yaman6.wav",
+      "yaman2.wav",
+      "raga-yaman-14.wav",
+      "yaman19.wav",
+      "raga-yaman 2.wav",
+      "raga-yaman 3.wav",
+      "yaman02.wav",
+      "yaman22.wav",
+      "yaman15.wav",
+      "yaman11.wav",
+      "yaman9.wav",
+      "yaman16.wav",
+      "yaman10.wav",
+      "raga-yaman-12.wav",
+      "yaman14.wav",
+      "raga-yaman-11.wav",
+      "yaman5.wav",
+      "yaman17.wav",
+      "yaman 3.wav",
+      "yaman20.wav",
+      "yaman01.wav",
+      "raga-yaman 1.wav"
+    ],
+    "test_sequences": [
+      "yaman 1.wav",
+      "yaman03.wav",
+      "yaman7.wav",
+      "yaman21.wav",
+      "yaman12.wav",
+      "yaman18.wav"
+    ],
+    "uniform_baseline": 0.14285714285714285
+  },
+  "results": [
+    {
+      "order": 1,
+      "missing_rate": 0.1,
+      "mean_accuracy": 0.29265350877192986,
+      "sd": 0.23708967628441002,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 7,
+      "n_contexts_possible": 7
+    },
+    {
+      "order": 1,
+      "missing_rate": 0.3,
+      "mean_accuracy": 0.28688427800269906,
+      "sd": 0.17230233678866036,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 7,
+      "n_contexts_possible": 7
+    },
+    {
+      "order": 1,
+      "missing_rate": 0.5,
+      "mean_accuracy": 0.2366604010025063,
+      "sd": 0.1315356649358385,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 7,
+      "n_contexts_possible": 7
+    },
+    {
+      "order": 2,
+      "missing_rate": 0.1,
+      "mean_accuracy": 0.46970029239766087,
+      "sd": 0.25317314981193156,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 42,
+      "n_contexts_possible": 49
+    },
+    {
+      "order": 2,
+      "missing_rate": 0.3,
+      "mean_accuracy": 0.4141990928175139,
+      "sd": 0.16340510709563008,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 42,
+      "n_contexts_possible": 49
+    },
+    {
+      "order": 2,
+      "missing_rate": 0.5,
+      "mean_accuracy": 0.37135625522138677,
+      "sd": 0.1246424650851902,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 42,
+      "n_contexts_possible": 49
+    },
+    {
+      "order": 3,
+      "missing_rate": 0.1,
+      "mean_accuracy": 0.4445175438596491,
+      "sd": 0.2888686804110427,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 215,
+      "n_contexts_possible": 343
+    },
+    {
+      "order": 3,
+      "missing_rate": 0.3,
+      "mean_accuracy": 0.39449505173189386,
+      "sd": 0.18563773476039253,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 215,
+      "n_contexts_possible": 343
+    },
+    {
+      "order": 3,
+      "missing_rate": 0.5,
+      "mean_accuracy": 0.3629438178780285,
+      "sd": 0.14758786993996226,
+      "n_evaluations": 120,
+      "n_test_sequences": 6,
+      "n_contexts_seen": 215,
+      "n_contexts_possible": 343
+    }
+  ]
+}
