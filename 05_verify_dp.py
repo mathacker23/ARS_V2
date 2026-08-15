@@ -1,20 +1,11 @@
-"""
-Sanity check required by the paper's own Reproducibility Checklist (Appendix C):
-'comparison of dynamic programming against exhaustive enumeration on small
-toy cases... exhaustive search and dynamic programming should return
-identical optimal scores and sequences under a deterministic tie-break rule.'
-"""
+
 import numpy as np
 import itertools
 import sys
-sys.path.insert(0, '/home/claude/ars_eval')
 from importlib import import_module
 
-# reimport functions from pipeline script
 import importlib.util
-spec = importlib.util.spec_from_file_location("pipeline", "/home/claude/ars_eval/04_ars_pipeline.py")
-# can't just exec the whole script (it runs the full experiment); instead
-# redefine the needed functions locally, identical logic, for isolated testing.
+
 
 N = 3
 ALPHABET_TEST = ['a', 'b', 'c']
@@ -105,7 +96,6 @@ def dp_score(seq, recon, P, k, alpha):
         score += log_prob_test(P, context, recon[t], alpha)
     return score
 
-# Test cases: random small sequences, small alphabet, various k and masks
 rng = np.random.RandomState(42)
 n_tests = 30
 n_pass = 0
@@ -122,8 +112,6 @@ for test_i in range(n_tests):
     dp_sc = dp_score(seq, dp_recon, P, k, 0.5)
 
     bf_recon, bf_sc = brute_force_reconstruct(seq, mask_positions, P, k, 0.5)
-
-    # scores must match (allow tiny float tolerance); sequences may differ only under ties
     match_score = abs(dp_sc - bf_sc) < 1e-9
     if match_score:
         n_pass += 1
