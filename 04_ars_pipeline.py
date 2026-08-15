@@ -1,39 +1,20 @@
-"""
-Step 4: Run the actual ARS reconstruction pipeline (as specified in the
-paper, Sections 3-5, 8, 10) on the real extracted Yaman symbol sequences.
 
-- Order-k Markov model, symmetric Dirichlet(alpha) prior -> posterior mean (eq 1)
-- Exact constrained MAP reconstruction via dynamic programming (Section 4, Algorithm 2)
-- No grammar constraints applied in this first pass (F(O,R) = all sequences
-  consistent with observation only) -- grammar-constrained pass can be added later
-- Missing-symbol accuracy (eq 13) as primary metric
-- Train/test split at the sequence level; masks generated independently per
-  test sequence, uniformly at random (same MAR mechanism as paper's synthetic
-  experiment, Section 8.1) at rates 10/30/50%
-- Fixed master seed for reproducibility, matching paper's protocol
-"""
 import numpy as np
 import json
 import random
 from collections import defaultdict
 
-SEQ_PATH = "/home/claude/ars_eval/symbols/sequences.json"
-RESULTS_PATH = "/home/claude/ars_eval/results/real_data_results.json"
-
 ALPHABET = ['S', 'R', 'G', 'm', 'P', 'D', 'N']
 N = len(ALPHABET)
 SYM2IDX = {s: i for i, s in enumerate(ALPHABET)}
-ALPHA = 0.5           # Dirichlet concentration, matches paper's synthetic setup
-MASTER_SEED = 20260731  # same master seed as paper for continuity
+ALPHA = 0.5         
+MASTER_SEED = 20260731  
 ORDERS = [1, 2, 3]
 MISSING_RATES = [0.10, 0.30, 0.50]
-N_MASK_REPEATS = 20    # repeated random masks per sequence per condition, for CI
+N_MASK_REPEATS = 20   
 
 with open(SEQ_PATH) as f:
     sequences_raw = json.load(f)
-
-# Keep only sequences long enough to be useful for held-out testing (need
-# room for context + several missing positions even at high order)
 sequences = {k: [SYM2IDX[s] for s in v] for k, v in sequences_raw.items() if len(v) >= 15}
 names = sorted(sequences.keys())
 print(f"Using {len(names)} sequences (>=15 symbols) out of {len(sequences_raw)} extracted")
@@ -41,8 +22,6 @@ print(f"Using {len(names)} sequences (>=15 symbols) out of {len(sequences_raw)} 
 rng = random.Random(MASTER_SEED)
 np_rng = np.random.RandomState(MASTER_SEED)
 
-# ---- Train/test split at sequence level (80/20, matches paper's spirit of
-# held-out test sequences distinct from training) ----
 shuffled = names[:]
 rng.shuffle(shuffled)
 n_test = max(1, int(round(0.2 * len(shuffled))))
@@ -58,12 +37,10 @@ def train_markov(train_seqs, k, alpha):
         for t in range(k, len(seq)):
             context = tuple(seq[t-k:t])
             counts[context][seq[t]] += 1
-    # also collect initial-context distribution (paper Appendix E.1) —
-    # empirical distribution over the first k symbols, Dirichlet-smoothed
     init_counts = defaultdict(lambda: np.zeros(N))
     for seq in train_seqs:
         if len(seq) >= k:
-            init_counts[tuple(seq[:k])][0] += 0  # placeholder; using uniform init below
+            init_counts[tuple(seq[:k])][0] += 0 
 
     P = {}
     for context, c in counts.items():
@@ -75,32 +52,22 @@ def log_prob(P, context, symbol, alpha):
     if context in P:
         return np.log(P[context][symbol])
     else:
-        # unseen context -> pure Dirichlet prior (uniform, since alpha symmetric)
         return np.log(1.0 / N)
 
 
 def exact_reconstruct(seq, mask_positions, P, k, alpha):
-    """
-    Exact DP reconstruction (paper Section 4.2, Algorithm 2), no hard grammar
-    (F(O,R) = observation-consistent sequences only). Returns reconstructed
-    full sequence (list of symbol indices).
-    """
+
     T = len(seq)
     mask_set = set(mask_positions)
-    # Domains: D_t = {observed symbol} if t not masked, else full alphabet
     domains = [[seq[t]] if t not in mask_set else list(range(N)) for t in range(T)]
 
-    # DP over contexts of length k. State at time t (0-indexed, after placing
-    # symbol t) = tuple of last k symbols. V[state] = best score so far.
-    # Initialize: enumerate all admissible length-k prefixes.
     if T < k:
-        # sequence shorter than order -- nothing to reconstruct meaningfully
+
         return [d[0] for d in domains]
 
     V = {}
-    backptr = {}  # backptr[(t, state)] = (prev_state, chosen_symbol)
+    backptr = {} 
 
-    # layer for t = k-1 (0-indexed): build all admissible prefixes of length k
     def admissible_prefixes():
         prefixes = [()]
         for t in range(k):
@@ -114,13 +81,9 @@ def exact_reconstruct(seq, mask_positions, P, k, alpha):
     init_prefixes = admissible_prefixes()
     layer = {}
     for prefix in init_prefixes:
-        # uniform initial-context score (paper allows this; log pi = const,
-        # doesn't affect argmax across sequences of fixed length as long as
-        # pi is fixed -- use uniform here since no init distribution trained)
         layer[prefix] = 0.0
-    V[k-1] = layer  # keyed by t index representing "state after placing symbol at t"
+    V[k-1] = layer 
 
-    # propagate forward
     for t in range(k, T):
         prev_layer = V[t-1]
         new_layer = {}
@@ -134,11 +97,8 @@ def exact_reconstruct(seq, mask_positions, P, k, alpha):
                     bp[new_state] = (state, a)
         V[t] = new_layer
         backptr[t] = bp
-
-    # backtrack from best terminal state
     final_layer = V[T-1]
     best_state = max(final_layer, key=lambda s: final_layer[s])
-    # reconstruct symbol sequence
     recon = [None] * T
     state = best_state
     for t in range(T-1, k-2, -1):
@@ -156,8 +116,6 @@ def missing_symbol_accuracy(true_seq, recon_seq, mask_positions):
     correct = sum(1 for t in mask_positions if recon_seq[t] == true_seq[t])
     return correct / len(mask_positions) if mask_positions else None
 
-
-# ---- Main experiment loop ----
 results = []
 train_seqs = [sequences[n] for n in train_names]
 
@@ -171,7 +129,7 @@ for k in ORDERS:
             seq = sequences[test_name]
             T = len(seq)
             n_missing = max(1, int(round(miss_rate * T)))
-            if n_missing >= T - k:  # keep at least k observed anchors
+            if n_missing >= T - k:  
                 n_missing = max(1, T - k - 1)
             for rep in range(N_MASK_REPEATS):
                 mask_positions = np_rng.choice(T, size=n_missing, replace=False).tolist()
