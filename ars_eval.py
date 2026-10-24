@@ -1,12 +1,4 @@
-"""ARS evaluation: order-k Dirichlet Markov model + exact constrained MAP decoder.
 
-Implements the paper's core:
-  * posterior-mean estimator  P[c,a] = (C(c,a) + alpha) / (C(c) + N*alpha)      (eq. 1)
-  * score  l(x) = log pi(x_1..k) + sum_t log P[x_{t-k..t-1}, x_t]               (eq. 4)
-  * exact DP over contexts with observation and grammar constraints          (Thm 4.1)
-  * BIC(k) = -2 loglik + N^k (N-1) log L                                     (eq. 11)
-Contexts are encoded base-N: c = x_{t-k}*N^(k-1) + ... + x_{t-1}.
-"""
 import itertools
 import numpy as np
 
@@ -19,12 +11,9 @@ class MarkovK:
         self.k, self.n, self.alpha = k, n, alpha
         self.counts = np.zeros((n ** k, n))
         self.init_counts = np.zeros(n ** k)
-        # row c = the k symbols of context c (most significant = oldest)
         self.digits = np.array(list(itertools.product(range(n), repeat=k)))
 
     def fit(self, seqs):
-        """seqs: list of int arrays. Transitions counted within each sequence;
-        initial-context distribution uses every k-gram (windows start mid-piece)."""
         k, n = self.k, self.n
         w = n ** np.arange(k - 1, -1, -1)
         for s in seqs:
@@ -286,7 +275,6 @@ def evaluate_fold(train_seqs, test_items, n, cfg, fold, allowed=None, trans_mask
 
 def run_cv(df, seq_col, alphabet, cfg, label, allowed=None, trans_mask=None, orders=(1, 2, 3),
            alpha=None, extra=None):
-    """Artist-disjoint GroupKFold cross-validation on one corpus."""
     from sklearn.model_selection import GroupKFold
     n = len(alphabet)
     df = df.reset_index(drop=True)
@@ -317,7 +305,6 @@ def run_cv(df, seq_col, alphabet, cfg, label, allowed=None, trans_mask=None, ord
 
 
 def summarize(res, by, n_boot=2000, seed=0):
-    """Mean of per-recording mean accuracy with a recording-level bootstrap CI."""
     out = []
     for key, sub in res.dropna(subset=['acc']).groupby(by):
         mean, lo, hi, n_rec = cluster_bootstrap_ci(sub.acc.values, sub.rec_id.values, n_boot, seed)
@@ -331,8 +318,6 @@ def summarize(res, by, n_boot=2000, seed=0):
 
 
 def paired_tests(res, by, comparisons):
-    """Wilcoxon signed-rank on per-recording mean accuracy for pre-specified model
-    pairs, Holm-corrected within each `by` group."""
     import pandas as pd
     from scipy.stats import wilcoxon
     out = []
@@ -362,9 +347,6 @@ def paired_tests(res, by, comparisons):
 
 def run_by_raga(df, seq_col, cfg, label, alphabet_fn, allowed_fn=None, orders=(1, 2, 3),
                 alpha=None, min_recordings=3, log=print):
-    """Raga-conditioned evaluation (the paper's setting): a separate model per raga,
-    artist-disjoint folds inside each raga. alphabet_fn(raga) -> list of symbols;
-    allowed_fn(raga, alphabet) -> bool mask for missing positions, or None."""
     rows, infos, skipped = [], [], []
     for raga, sub in df.groupby('raga'):
         if len(sub) < min_recordings or sub['group'].nunique() < 2:
