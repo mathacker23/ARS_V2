@@ -1,12 +1,4 @@
-"""ARS data preparation: pitch track -> symbolic svara sequence.
 
-Mirrors the ARS paper's audio-to-symbol pipeline (Sec. 9.3):
-  median filter -> change-point segmentation (100 cents, min 4 frames at the
-  paper's 11.61 ms hop) -> segment median in cents re tonic -> quantize ->
-  collapse repeats.
-Pitch tracks from any source are first resampled to the paper's hop so the
-frame-based parameters mean the same thing on every dataset.
-"""
 import re
 import unicodedata
 import numpy as np
@@ -68,7 +60,6 @@ def raga_alphabet(name):
     return RAGA_SVARAS[k].split() if k else None
 
 
-# The paper writes Yaman's tivra Ma as 'm' (600 cents); Saraga writes it 'M'.
 PAPER_TO_SARAGA = {'yaman': {'m': 'M'}}
 
 
@@ -120,9 +111,6 @@ def voiced_runs(cents):
 
 
 def segment(cents, threshold=100.0, min_frames=4):
-    """Change-point segmentation: start a new segment when a frame deviates
-    more than `threshold` cents from the running mean of the current segment,
-    or when voicing breaks. Returns list of (start, end, median_cents)."""
     segs = []
     for s, e in voiced_runs(cents):
         x = cents[s:e]
@@ -178,11 +166,6 @@ def pitch_to_symbols(times, f0, tonic_hz, alphabet=None, cfg=CFG):
 
 # ---------------------------------------------------------------- tonic
 def estimate_tonic(f0, bins_per_semitone=10):
-    """Histogram-mode tonic estimate on octave-folded voiced pitch, with
-    heuristic octave correction to a typical vocal Sa range (100-300 Hz).
-    confidence = share of voiced frames within +/-50 cents of the mode.
-    Approximates the paper's estimator; replace with the ARS_V2 function
-    for exact parity."""
     f0 = np.asarray(f0, float)
     f = f0[f0 > 0]
     if len(f) < 50:
@@ -217,9 +200,6 @@ BASE7 = {'S': 'S', 'r': 'R', 'R': 'R', 'g': 'G', 'G': 'G', 'm': 'M', 'M': 'M',
 
 
 def to_base7(seq):
-    """Drop komal/tivra distinctions: 12-svara symbols -> 7 base letters.
-    Used for Carnatic phrase labels, which are written lowercase without the
-    Hindustani komal/shuddha marking (e.g. 'ndmdnsndn')."""
     out = []
     for s in seq:
         b = BASE7.get(s) or BASE7.get(s.upper()) or BASE7.get(s.lower())
@@ -229,8 +209,6 @@ def to_base7(seq):
 
 
 def phrase_tokens(label):
-    """Saraga phrase label (e.g. 'rg', 'S R g m') -> svara tokens.
-    Returns (tokens, leftover_chars) so unexpected markup can be audited."""
     label = str(label or '')
     toks = PHRASE_TOKEN.findall(label)
     leftover = PHRASE_TOKEN.sub('', label).replace(' ', '')
@@ -238,7 +216,6 @@ def phrase_tokens(label):
 
 
 def edit_distance(a, b):
-    """Levenshtein distance between two symbol lists."""
     prev = list(range(len(b) + 1))
     for i, x in enumerate(a, 1):
         cur = [i]
@@ -249,7 +226,6 @@ def edit_distance(a, b):
 
 
 def lcs_len(a, b):
-    """Length of the longest common subsequence (order kept, gaps allowed)."""
     prev = [0] * (len(b) + 1)
     for x in a:
         cur = [0]
@@ -260,7 +236,6 @@ def lcs_len(a, b):
 
 
 def symbols_in_span(symbols, seg_times, start, end):
-    """Pipeline symbols whose segment midpoint falls inside [start, end]."""
     out = [s for s, (a, b) in zip(symbols, seg_times) if start <= (a + b) / 2 <= end]
     return collapse(out)
 
